@@ -6,15 +6,19 @@ import {
   Param,
   Post,
   Put,
+  UseGuards,
 } from '@nestjs/common';
+import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 import { CreateOrderDto } from '../dto/create-order.dto';
 import { UpdateOrderDto } from '../dto/update-order.dto';
 import { OrderService } from '../services/order.service';
 
 @Controller('order')
+@UseGuards(ThrottlerGuard)
 export class OrderController {
-  constructor(private readonly orderService: OrderService) { }
+  constructor(private readonly orderService: OrderService) {}
 
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @Get()
   async findAll() {
     try {

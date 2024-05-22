@@ -1,7 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { LoggerModule } from 'nestjs-pino';
+import { ThrottlerModule } from '@nestjs/throttler';
 import { OrderController } from '../controller/order.controller';
-import { CreateOrderDto } from '../dto/create-order.dto';
 import { OrderService } from '../services/order.service';
 
 const intOrderId = '123';
@@ -16,19 +15,19 @@ const order = {
   strRemarks: 'Handle with care',
   dteCreatedAt: new Date('2024-05-21T12:00:00.000Z'),
   dteUpdatedAt: new Date('2024-05-21T12:00:00.000Z'),
-}
+};
 
 const mockOrderService = {
-  create: jest.fn(dto => {
+  create: jest.fn((dto) => {
     return {
       intOrderId: expect.any(Number),
       ...dto,
-    }
+    };
   }),
   update: jest.fn().mockImplementation((id, dto) => ({
     intOrderId: id,
     ...dto,
-  }))
+  })),
 };
 
 describe('OrderController', () => {
@@ -38,7 +37,18 @@ describe('OrderController', () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [OrderController],
       providers: [OrderService],
-    }).overrideProvider(OrderService).useValue(mockOrderService).compile();
+      imports: [
+        ThrottlerModule.forRoot([
+          {
+            ttl: 60,
+            limit: 10,
+          },
+        ]),
+      ],
+    })
+      .overrideProvider(OrderService)
+      .useValue(mockOrderService)
+      .compile();
 
     controller = module.get<OrderController>(OrderController);
   });
@@ -59,7 +69,7 @@ describe('OrderController', () => {
     });
 
     expect(mockOrderService.create).toHaveBeenCalledWith(order);
-  })
+  });
 
   it('should be updated an order', async () => {
     const response = await controller.update(intOrderId, order);
@@ -72,5 +82,5 @@ describe('OrderController', () => {
       },
     });
     expect(mockOrderService.update).toHaveBeenCalled();
-  })
+  });
 });
