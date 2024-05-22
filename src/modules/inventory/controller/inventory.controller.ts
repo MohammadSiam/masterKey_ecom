@@ -1,34 +1,54 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Put } from '@nestjs/common';
 import { CreateInventoryDto } from '../dto/create-inventory.dto';
 import { UpdateInventoryDto } from '../dto/update-inventory.dto';
 import { InventoryService } from '../services/inventory.service';
 
 @Controller('inventory')
 export class InventoryController {
-  constructor(private readonly inventoryService: InventoryService) {}
-
-  @Post()
-  create(@Body() createInventoryDto: CreateInventoryDto) {
-    return this.inventoryService.create(createInventoryDto);
-  }
-
+  constructor(private readonly inventoryService: InventoryService) { }
   @Get()
-  findAll() {
-    return this.inventoryService.findAll();
+  async findAll() {
+    try {
+      const data: any = await this.inventoryService.findAll();
+      return { success: true, data };
+    } catch (error) {
+      throw error;
+    }
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.inventoryService.findOne(+id);
+  async findOne(@Param('id') id: string) {
+    try {
+      const data: any = await this.inventoryService.findOne(+id)
+      return { success: true, data };
+    } catch (error) {
+      throw error;
+    }
   }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateInventoryDto: UpdateInventoryDto) {
-    return this.inventoryService.update(+id, updateInventoryDto);
+  @Post('create')
+  async create(@Body() createInventoryDto: CreateInventoryDto) {
+    const data: any = await this.inventoryService.create(createInventoryDto)
+    return { success: true, data };
   }
 
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.inventoryService.remove(+id);
+  @Put('update/:id')
+  async update(@Param('id') id: string, @Body() updateInventoryDto: UpdateInventoryDto) {
+    try {
+      const data: any = await this.inventoryService.update(+id, updateInventoryDto)
+      return { success: true, data };
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  @Delete('delete/:id')
+  async remove(@Param('id') id: string) {
+    try {
+      const data: any = await this.inventoryService.remove(+id)
+      return { success: true, data };
+    } catch (error) {
+      throw error;
+    }
   }
 }

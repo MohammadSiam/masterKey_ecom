@@ -11,5 +11,8 @@ export class Inventory {
     intQuantity: number;
 
     @Column({ type: 'datetime', default: () => 'CURRENT_TIMESTAMP' })
+    dteCreatedAt: Date;
+
+    @Column({ type: 'datetime', default: () => 'CURRENT_TIMESTAMP' })
     dteUpdatedAt: Date;
 }
