@@ -1,0 +1,13 @@
+services:
+  masterKeys_api_prod:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.prod
+    ports:
+      - "3001:3001"
+    environment:
+      - PORT=3000
+      - NODE_ENV=development
+    volumes:
+      -./src:/usr/src/app/src

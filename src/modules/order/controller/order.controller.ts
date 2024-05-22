@@ -13,7 +13,7 @@ import { OrderService } from '../services/order.service';
 
 @Controller('order')
 export class OrderController {
-  constructor(private readonly orderService: OrderService) {}
+  constructor(private readonly orderService: OrderService) { }
 
   @Get()
   async findAll() {

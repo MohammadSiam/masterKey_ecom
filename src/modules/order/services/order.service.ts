@@ -10,13 +10,14 @@ import { v4 as uuidv4 } from 'uuid';
 import { CreateOrderDto } from '../dto/create-order.dto';
 import { UpdateOrderDto } from '../dto/update-order.dto';
 import { Order } from '../entities/order.entity';
+import { Inventory } from 'src/modules/inventory/entities/inventory.entity';
 
 @Injectable()
 export class OrderService {
   constructor(
     @InjectRepository(Order)
     private orderRepository: Repository<Order>,
-  ) {}
+  ) { }
 
   async findAll() {
     try {
