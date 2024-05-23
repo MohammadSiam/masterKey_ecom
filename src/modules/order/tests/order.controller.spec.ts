@@ -6,6 +6,7 @@ import { OrderService } from '../services/order.service';
 const intOrderId = '123';
 const order = {
   strUniqueId: '6a8b4acf-22bd-42f7-80b1-3a54c3c0d54e',
+  intProductId: 1,
   strCustomerName: 'John Doe',
   strCustomerPhone: '+1234567890',
   dteOrderDate: new Date('2024-05-21T12:00:00.000Z'),

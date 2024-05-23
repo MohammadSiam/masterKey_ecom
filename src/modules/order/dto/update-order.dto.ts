@@ -3,6 +3,7 @@ import { CreateOrderDto } from './create-order.dto';
 
 export class UpdateOrderDto extends PartialType(CreateOrderDto) {
   readonly strUniqueId: string;
+  readonly intProductId: number;
   readonly strCustomerName: string;
   readonly strCustomerPhone: string;
   readonly dteOrderDate: Date;

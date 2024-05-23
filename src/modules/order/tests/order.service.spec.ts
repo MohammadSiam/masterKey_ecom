@@ -1,12 +1,12 @@
-import { NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { CreateOrderDto } from '../dto/create-order.dto';
-import { Order } from '../entities/order.entity';
 import { OrderService } from '../services/order.service';
+import { Order } from '../entities/order.entity';
+import { BadRequestException } from '@nestjs/common';
 
 const mockOrder = {
   strUniqueId: '6a8b4acf-22bd-42f7-80b1-3a54c3c0d54e',
+  intProductId: 1,
   strCustomerName: 'John Doe',
   strCustomerPhone: '+1234567890',
   dteOrderDate: new Date('2024-05-21T12:00:00.000Z'),
@@ -18,18 +18,23 @@ const mockOrder = {
   dteUpdatedAt: new Date('2024-05-21T12:00:00.000Z'),
 };
 
-const mockAllOrders = [mockOrder];
-const mockId = '123';
+const mockOrderRepository = {
+  save: jest.fn().mockResolvedValue({
+    intOrderId: 1,
+    ...mockOrder,
+  }),
+  createQueryBuilder: jest.fn().mockReturnValue({
+    leftJoinAndSelect: jest.fn().mockReturnThis(),
+    select: jest.fn().mockReturnThis(),
+    where: jest.fn().mockReturnThis(),
+    getRawOne: jest.fn().mockResolvedValue({ InventoryQuantity: 20 }),
+    update: jest.fn().mockReturnThis(),
+    set: jest.fn().mockReturnThis(),
+    execute: jest.fn().mockResolvedValue({ affected: 1 }),
+  }),
+};
 
-const mocOrderRepository = {
-  create: jest.fn().mockImplementation(dto => dto),
-  save: jest.fn().mockImplementation(dto => Promise.resolve({
-    intOrderId: expect.any(Number),
-    ...dto,
-  }))
-}
-
-describe('orderService', () => {
+describe('OrderService', () => {
   let service: OrderService;
 
   beforeEach(async () => {
@@ -38,7 +43,7 @@ describe('orderService', () => {
         OrderService,
         {
           provide: getRepositoryToken(Order),
-          useValue: mocOrderRepository,
+          useValue: mockOrderRepository,
         },
       ],
     }).compile();
@@ -50,14 +55,47 @@ describe('orderService', () => {
     expect(service).toBeDefined();
   });
 
-  it('should be created an order', async () => {
+  it('should create an order', async () => {
     const response = await service.create(mockOrder);
 
     expect(response).toEqual({
-      intOrderId: expect.any(Number),
+      intOrderId: 1,
       ...mockOrder,
     });
 
-    expect(mocOrderRepository.save).toHaveBeenCalledWith(mockOrder);
-  })
+    expect(mockOrderRepository.save).toHaveBeenCalledWith({
+      strUniqueId: expect.any(String),
+      ...mockOrder,
+    });
+
+    expect(mockOrderRepository.createQueryBuilder).toHaveBeenCalled();
+  });
+
+  it('should throw BadRequestException if product not found in inventory', async () => {
+    mockOrderRepository.createQueryBuilder = jest.fn().mockReturnValue({
+      leftJoinAndSelect: jest.fn().mockReturnThis(),
+      select: jest.fn().mockReturnThis(),
+      where: jest.fn().mockReturnThis(),
+      getRawOne: jest.fn().mockResolvedValue(null),
+      update: jest.fn().mockReturnThis(),
+      set: jest.fn().mockReturnThis(),
+      execute: jest.fn().mockResolvedValue({ affected: 1 }),
+    });
+
+    await expect(service.create(mockOrder)).rejects.toThrow(BadRequestException);
+  });
+
+  it('should throw BadRequestException if insufficient inventory quantity', async () => {
+    mockOrderRepository.createQueryBuilder = jest.fn().mockReturnValue({
+      leftJoinAndSelect: jest.fn().mockReturnThis(),
+      select: jest.fn().mockReturnThis(),
+      where: jest.fn().mockReturnThis(),
+      getRawOne: jest.fn().mockResolvedValue({ InventoryQuantity: 0 }),
+      update: jest.fn().mockReturnThis(),
+      set: jest.fn().mockReturnThis(),
+      execute: jest.fn().mockResolvedValue({ affected: 1 }),
+    });
+
+    await expect(service.create(mockOrder)).rejects.toThrow(BadRequestException);
+  });
 });

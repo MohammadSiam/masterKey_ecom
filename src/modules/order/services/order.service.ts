@@ -16,7 +16,7 @@ export class OrderService {
   constructor(
     @InjectRepository(Order)
     private orderRepository: Repository<Order>,
-  ) {}
+  ) { }
 
   async findAll() {
     try {
@@ -40,16 +40,41 @@ export class OrderService {
   }
 
   async create(createOrderDto: CreateOrderDto) {
-    if (!createOrderDto.strCustomerName || !createOrderDto.strCustomerPhone)
-      throw new BadRequestException('Customer name and phone must be');
+    if (!createOrderDto.strCustomerName || !createOrderDto.strCustomerPhone || !createOrderDto.intProductId) {
+      throw new BadRequestException('Customer name, phone, and productId must be provided');
+    }
     try {
+      // check if product exists in inventory
+      const inventoryInfo = await this.orderRepository
+        .createQueryBuilder('o')
+        .leftJoinAndSelect('tblInventory', 'i', 'i.intProductId = :productId', { productId: createOrderDto.intProductId })
+        .select([
+          'i.intQuantity AS InventoryQuantity'
+        ])
+        .getRawOne();
+
+      if (!inventoryInfo) throw new BadRequestException('Product not found in inventory');
+      // 
+      const { InventoryQuantity } = inventoryInfo;
+      if (InventoryQuantity <= 0) throw new BadRequestException('Insufficient inventory quantity');
+
+      // create order
       const orderCode = uuidv4();
-      const order = this.orderRepository.save({
+      const order = await this.orderRepository.save({
         strUniqueId: orderCode,
         ...createOrderDto,
       });
-      if (!order)
-        throw new InternalServerErrorException('Could not save order');
+      if (!order) throw new InternalServerErrorException('Could not save order');
+
+      //update inventory quantity
+      const result = await this.orderRepository
+        .createQueryBuilder()
+        .update('tblInventory')
+        .set({ intQuantity: () => "intQuantity - 1" })
+        .where('intProductId = :productId', { productId: createOrderDto.intProductId })
+        .execute();
+
+      if (result.affected === 0) throw new InternalServerErrorException('Could not update inventory quantity');
       return order;
     } catch (error) {
       throw error;

@@ -8,6 +8,9 @@ export class Order {
   @Column({ type: 'varchar', nullable: false })
   strUniqueId: string;
 
+  @Column({ type: 'int', nullable: false })
+  intProductId: number;
+
   @Column({ type: 'varchar', nullable: false })
   strCustomerName: string;
 
